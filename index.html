@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moj Majstor AI – Reels Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --bg:#070d1c; --bg2:#0c1529; --bg3:#111e38;
+  --accent:#0359ff; --accent-l:#3a7fff; --accent-rgb:3,89,255;
+  --bord:#1a2d55; --gray:#8899bb;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:var(--bg); color:#fff;
+  font-family:'Barlow',sans-serif;
+  display:flex; height:100vh; overflow:hidden;
+}
+
+/* SIDEBAR */
+#sidebar {
+  width:240px; min-width:240px; background:var(--bg2);
+  border-right:1px solid var(--bord);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+#sidebar h1 {
+  padding:16px; font-family:'Barlow Condensed',sans-serif;
+  font-size:14px; font-weight:900; letter-spacing:1px;
+  border-bottom:1px solid var(--bord);
+}
+#sidebar h1 span { color:var(--accent); }
+#tpl-list { overflow-y:auto; flex:1; padding:6px; }
+.tb {
+  width:100%; padding:9px 10px; margin-bottom:3px;
+  background:transparent; border:1px solid transparent;
+  border-radius:5px; color:#fff;
+  font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700;
+  text-align:left; cursor:pointer; display:flex; align-items:center; gap:8px;
+  transition:all .15s;
+}
+.tb:hover { background:#111e38; border-color:#1a2d55; }
+.tb.on { background:rgba(var(--accent-rgb),.18); border-color:var(--accent); color:var(--accent-l); }
+.tb .n { font-size:9px; color:#8899bb; width:22px; flex-shrink:0; }
+.tb.on .n { color:#3a7fff; }
+
+/* EDITOR */
+#epanel {
+  width:280px; min-width:280px; background:var(--bg2);
+  border-right:1px solid var(--bord);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+#ehead { padding:16px; border-bottom:1px solid var(--bord); }
+#etitle { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:900; }
+#efields { overflow-y:auto; flex:1; padding:10px; }
+.fg { margin-bottom:12px; }
+.fg label {
+  display:block; font-size:10px; font-weight:700;
+  color:#8899bb; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px;
+}
+.fg input, .fg textarea {
+  width:100%; background:var(--bg3); border:1px solid var(--bord);
+  border-radius:5px; color:#fff;
+  font-family:'Barlow',sans-serif; font-size:12px; padding:8px 10px;
+  outline:none; resize:vertical; transition:border-color .15s;
+}
+.fg input:focus, .fg textarea:focus { border-color:var(--accent); }
+.fg textarea { min-height:58px; }
+#dlbtn {
+  margin:10px; padding:13px; background:var(--accent); border:none; border-radius:7px;
+  color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:900;
+  letter-spacing:1px; cursor:pointer; transition:all .2s;
+}
+#dlbtn:hover { filter:brightness(.85); }
+#dlbtn.loading { filter:brightness(.85); pointer-events:none; }
+
+/* THEMES BAR */
+#themes-bar {
+  padding:8px 10px; border-bottom:1px solid var(--bord);
+  display:flex; align-items:center; gap:6px;
+}
+#themes-bar .tlbl {
+  font-size:9px; font-weight:700; color:var(--gray);
+  text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; margin-right:2px;
+}
+#theme-swatches { display:flex; gap:5px; flex:1; }
+.tsw {
+  width:20px; height:20px; border-radius:50%;
+  cursor:pointer; border:2px solid transparent;
+  flex-shrink:0; transition:border-color .15s,transform .15s;
+}
+.tsw:hover { transform:scale(1.2); }
+.tsw.on { border-color:#fff; box-shadow:0 0 0 1px rgba(255,255,255,.3); }
+#resetpos-btn {
+  padding:3px 8px; background:transparent; border:1px solid var(--bord);
+  border-radius:4px; color:var(--gray); font-size:11px; cursor:pointer;
+  transition:all .15s; white-space:nowrap;
+}
+#resetpos-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* PREVIEW */
+#parea {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  background:#050a16; overflow:hidden; position:relative;
+}
+#plabel {
+  position:absolute; top:12px;
+  font-size:10px; color:#8899bb; letter-spacing:1px;
+  background:rgba(0,0,0,.5); padding:3px 8px; border-radius:20px;
+  pointer-events:none; z-index:10;
+}
+#pwrap { position:relative; overflow:hidden; box-shadow:0 20px 80px rgba(0,0,0,.8); }
+#pcanvas { transform-origin:0 0; }
+
+/* RENDER TARGET */
+#trender {
+  position:fixed; top:-9999px; left:-9999px; z-index:-1;
+  width:1080px; height:1920px; overflow:hidden;
+}
+
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-thumb { background:var(--bord); border-radius:2px; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h1>MOJ MAJSTOR <span>AI</span><br><span style="font-weight:400;color:#8899bb;font-size:11px">REELS EDITOR · 1080×1920</span></h1>
+  <div id="tpl-list"></div>
+</div>
+
+<div id="epanel">
+  <div id="ehead"><div id="etitle">–</div></div>
+  <div id="themes-bar">
+    <span class="tlbl">Tema</span>
+    <div id="theme-swatches"></div>
+    <button id="resetpos-btn" onclick="resetDrag()" title="Resetuj pozicije elemenata">↺ Reset</button>
+  </div>
+  <div id="efields"></div>
+  <button id="dlbtn" onclick="download()">⬇ PREUZMI REELS (1080×1920)</button>
+</div>
+
+<div id="parea">
+  <div id="plabel">PREVIEW</div>
+  <div id="pwrap"><div id="pcanvas"></div></div>
+</div>
+
+<div id="trender"></div>
+
+<script>
+// ─── COLOURS ─────────────────────────────────────────────────────────
+let C = {
+  bg:    '#070d1c',
+  bg2:   '#0c1529',
+  bg3:   '#111e38',
+  blue:  '#0359ff',
+  bluel: '#3a7fff',
+  red:   '#cc1515',
+  gray:  '#8899bb',
+  bord:  '#1a2d55',
+};
+
+// ─── THEMES ───────────────────────────────────────────────────────────
+const THEMES = [
+  { name:'Plava',      swatch:'#0359ff', blue:'#0359ff', bluel:'#3a7fff', rgb:'3,89,255',
+    bg:'#070d1c', bg2:'#0c1529', bg3:'#111e38', bord:'#1a2d55', gray:'#8899bb' },
+  { name:'Crvena',     swatch:'#cc1515', blue:'#cc1515', bluel:'#ff4444', rgb:'204,21,21',
+    bg:'#0d0305', bg2:'#160608', bg3:'#250b0b', bord:'#3d1010', gray:'#bb9999' },
+  { name:'Zelena',     swatch:'#00aa55', blue:'#00aa55', bluel:'#33cc77', rgb:'0,170,85',
+    bg:'#030d07', bg2:'#07150d', bg3:'#0d2018', bord:'#0f3a1e', gray:'#88bb99' },
+  { name:'Zlatna',     swatch:'#d4900a', blue:'#d4900a', bluel:'#f0b830', rgb:'212,144,10',
+    bg:'#0d0900', bg2:'#150f00', bg3:'#221800', bord:'#3a2c00', gray:'#bbaa77' },
+  { name:'Ljubičasta', swatch:'#7722dd', blue:'#7722dd', bluel:'#aa55ff', rgb:'119,34,221',
+    bg:'#080612', bg2:'#0e0a1e', bg3:'#170f30', bord:'#2d1a55', gray:'#9988bb' },
+];
+let curTheme = 0;
+
+function applyTheme(idx) {
+  curTheme = idx;
+  const t = THEMES[idx];
+  C.blue  = t.blue;
+  C.bluel = t.bluel;
+  C.bg    = t.bg;
+  C.bg2   = t.bg2;
+  C.bg3   = t.bg3;
+  C.bord  = t.bord;
+  C.gray  = t.gray;
+  const r = document.documentElement;
+  r.style.setProperty('--bg',        t.bg);
+  r.style.setProperty('--bg2',       t.bg2);
+  r.style.setProperty('--bg3',       t.bg3);
+  r.style.setProperty('--accent',    t.blue);
+  r.style.setProperty('--accent-l',  t.bluel);
+  r.style.setProperty('--accent-rgb',t.rgb);
+  r.style.setProperty('--bord',      t.bord);
+  r.style.setProperty('--gray',      t.gray);
+  document.querySelectorAll('.tsw').forEach((sw,i) => sw.classList.toggle('on', i===idx));
+  renderPreview();
+}
+
+function buildThemesBar() {
+  const wrap = document.getElementById('theme-swatches');
+  THEMES.forEach((t, i) => {
+    const sw = document.createElement('div');
+    sw.className = 'tsw' + (i===0 ? ' on' : '');
+    sw.title = t.name;
+    sw.style.background = t.swatch;
+    sw.onclick = () => applyTheme(i);
+    wrap.appendChild(sw);
+  });
+}
+
+// ─── DRAG ─────────────────────────────────────────────────────────────
+const dragPos = {}; // { tplId: { elIndex: {x, y} } }
+
+function getScale() {
+  const m = document.getElementById('pcanvas').style.transform.match(/scale\(([\d.]+)\)/);
+  return m ? parseFloat(m[1]) : 1;
+}
+
+function findContentContainer(root) {
+  const divs = root.querySelectorAll('div');
+  for (const d of divs) {
+    const p = d.style.padding;
+    if (p && p.includes('90px') && d.children.length >= 2) return d;
+  }
+  // Fallback: z-index:1 or z-index:2 content wrapper → first child
+  for (const d of divs) {
+    if ((d.style.zIndex === '1' || d.style.zIndex === '2') && d.firstElementChild) {
+      const fc = d.firstElementChild;
+      if (fc.children.length >= 2) return fc;
+    }
+  }
+  return null;
+}
+
+function makeDraggable() {
+  const pc = document.getElementById('pcanvas');
+  const root = pc.firstElementChild;
+  if (!root) return;
+  const container = findContentContainer(root);
+  if (!container) return;
+  if (!dragPos[cur]) dragPos[cur] = {};
+
+  Array.from(container.children).forEach((el, i) => {
+    const saved = dragPos[cur][i] || {x:0, y:0};
+    el.style.position  = 'relative';
+    el.style.transform = `translate(${saved.x}px,${saved.y}px)`;
+    el.style.cursor    = 'grab';
+    el.style.userSelect = 'none';
+
+    el.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault(); e.stopPropagation();
+      const scale  = getScale();
+      const sx     = e.clientX, sy = e.clientY;
+      const ox     = (dragPos[cur][i] || {x:0}).x;
+      const oy     = (dragPos[cur][i] || {y:0}).y;
+      el.style.cursor = 'grabbing';
+      el.style.zIndex = '999';
+
+      const onMove = (e) => {
+        const nx = ox + (e.clientX - sx) / scale;
+        const ny = oy + (e.clientY - sy) / scale;
+        dragPos[cur][i] = {x: nx, y: ny};
+        el.style.transform = `translate(${nx}px,${ny}px)`;
+      };
+      const onUp = () => {
+        el.style.cursor = 'grab';
+        el.style.zIndex = '';
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+}
+
+function resetDrag() {
+  dragPos[cur] = {};
+  renderPreview();
+}
+
+// ─── STRIPE DOM LINES (html2canvas-safe: real divs, no background-image) ───
+function stripeLines(color='rgba(255,255,255,0.045)') {
+  const w = 1080, h = 1920, gap = 58;
+  const diag = Math.ceil(Math.sqrt(w*w + h*h));
+  const count = Math.ceil((w + h) / gap) + 4;
+  let html = '';
+  for (let i = -2; i < count; i++) {
+    const offset = i * gap;
+    html += `<div style="position:absolute;left:${offset - diag/2}px;top:${h/2}px;width:${diag}px;height:2px;background:${color};transform:rotate(-45deg);transform-origin:left center;pointer-events:none"></div>`;
+  }
+  return `<div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0">${html}</div>`;
+}
+
+// ─── SHARED ELEMENTS ─────────────────────────────────────────────────
+function logo(scale=1) {
+  const s = (n) => Math.round(n*scale)+'px';
+  return `<div style="display:inline-flex;align-items:center;gap:${s(10)};background:#1a2d55;border-radius:${s(50)};padding:${s(10)} ${s(22)}">
+    <div style="width:${s(34)};height:${s(34)};background:${C.blue};border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:${s(13)};font-weight:900;color:#fff">MM</div>
+    <span style="font-family:'Barlow Condensed',sans-serif;font-size:${s(20)};font-weight:800;color:#fff">Moj Majstor</span>
+    <span style="background:${C.blue};color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:${s(10)};font-weight:900;padding:${s(2)} ${s(6)};border-radius:${s(4)}">AI</span>
+  </div>`;
+}
+
+function badge(text, bg=C.blue) {
+  return `<div style="display:inline-flex;align-items:center;background:${bg};border-radius:50px;padding:12px 26px;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:#fff;letter-spacing:1px">${text}</div>`;
+}
+
+function cta(text, bg=C.blue, color='#fff') {
+  return `<div style="display:inline-flex;align-items:center;background:${bg};border-radius:14px;padding:28px 52px;font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:${color};letter-spacing:1px;text-transform:uppercase">${text}</div>`;
+}
+
+function storeBadge(icon, text) {
+  return `<div style="display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:10px;padding:14px 24px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:#fff">${icon} ${text}</div>`;
+}
+
+function starsRow(n=5) {
+  n = Math.max(0, Math.min(5, parseInt(n)||5));
+  return [...Array(5)].map((_,i)=>`<span style="color:${i<n?'#ffd700':'#2a3550'}"">★</span>`).join('');
+}
+
+// wrapper for full-size template
+function tplWrap(bg, stripeColor, content) {
+  return `<div style="width:1080px;height:1920px;background:${bg};position:relative;overflow:hidden;font-family:'Barlow Condensed',sans-serif">
+    ${stripeLines(stripeColor)}
+    <div style="position:relative;z-index:1;width:1080px;height:1920px">
+      ${content}
+    </div>
+  </div>`;
+}
+
+// ─── TEMPLATES ────────────────────────────────────────────────────────
+
+function T01(v) {
+  return tplWrap(C.bg, 'rgba(3,89,255,0.07)', `
+    <div style="padding:90px 90px 0">
+      ${logo(2.2)}
+      <div style="width:190px;height:190px;background:rgba(3,89,255,.15);border:2px solid rgba(3,89,255,.35);border-radius:36px;display:flex;align-items:center;justify-content:center;font-size:80px;margin:90px 0 70px">📱</div>
+      <div style="font-size:130px;font-weight:900;line-height:.9;text-transform:uppercase;margin-bottom:14px">
+        <div style="color:#fff">${v.headline1||'MAJSTOR'}</div>
+        <div style="color:#fff">NA <span style="color:${C.blue}">${v.headline2||'DOHVAT'}</span></div>
+        <div style="color:#fff">${v.headline3||'RUKE!'}</div>
+      </div>
+      <div style="font-size:36px;font-weight:700;color:${C.gray};letter-spacing:3px;text-transform:uppercase;margin:40px 0 70px">${v.tagline||'BAŠ PO VAŠOJ MJERI.'}</div>
+      ${cta(v.cta||'PREUZMI APLIKACIJU →')}
+      <div style="display:flex;gap:18px;margin-top:50px">
+        ${storeBadge('📱', v.badge1||'Google Play')}
+        ${storeBadge('🍎', v.badge2||'App Store')}
+      </div>
+    </div>
+  `);
+}
+
+function T02(v) {
+  return tplWrap(C.bg, 'rgba(3,89,255,0.07)', `
+    <div style="position:absolute;right:-60px;top:50%;transform:translateY(-50%) rotate(-12deg);font-size:460px;opacity:.05;pointer-events:none;line-height:1;z-index:0">${v.bgicon||'🔧'}</div>
+    <div style="padding:90px;position:relative;z-index:2">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:140px">
+        ${badge(v.badge||'ZA MAJSTORE')}
+        ${logo(1.8)}
+      </div>
+      <div style="font-size:120px;font-weight:900;line-height:.88;text-transform:uppercase;margin-bottom:60px">
+        <div style="color:#fff">${v.headline1||'MAJSTORE,'}</div>
+        <div style="color:#fff">${v.headline2||'TRAŽIŠ JOŠ'}</div>
+        <div style="color:${C.blue}">${v.headline3||'POSLA?'}</div>
+      </div>
+      <div style="font-family:'Barlow',sans-serif;font-size:34px;line-height:1.55;color:rgba(255,255,255,.78);margin-bottom:70px;white-space:pre-line">${v.body||'Hiljade klijenata te čeka.\nPostavi oglas i počni danas.'}</div>
+      ${cta(v.cta||'POSTAVI OGLAS →')}
+    </div>
+  `);
+}
+
+function T03(v) {
+  function ratingRow(label, stars) {
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:24px 30px;background:rgba(255,255,255,.05);border-radius:12px;margin-bottom:14px;font-size:28px;font-weight:700;color:#fff">
+      <span>${label}</span>
+      <span style="font-size:32px">${starsRow(stars)}</span>
+    </div>`;
+  }
+  return tplWrap(C.bg, 'rgba(255,255,255,0.03)', `
+    <div style="padding:90px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:80px">
+        ${badge(v.badge||'VODOINSTALATER')}
+        ${logo(1.8)}
+      </div>
+      <div style="font-size:200px;color:${C.blue};opacity:.4;line-height:.7;margin-bottom:20px">"</div>
+      <div style="font-family:'Barlow',sans-serif;font-size:44px;font-style:italic;font-weight:500;line-height:1.4;color:#dde8ff;margin-bottom:90px">${v.quote||'Profesionalan i uredan. Završio posao brzo i bez stresa.'}</div>
+      ${ratingRow(v.rating1l||'Komunikacija', v.rating1s||5)}
+      ${ratingRow(v.rating2l||'Dogovor', v.rating2s||5)}
+      ${ratingRow(v.rating3l||'Brzina', v.rating3s||5)}
+      <div style="margin-top:60px;text-align:right">${logo(1.8)}</div>
+    </div>
+  `);
+}
+
+function T04(v) {
+  return tplWrap(C.bg, 'rgba(3,89,255,0.07)', `
+    <div style="padding:90px">
+      <div style="margin-bottom:160px">${logo(2.2)}</div>
+      <div style="font-size:105px;font-weight:900;line-height:.88;text-transform:uppercase;margin-bottom:60px">
+        <div style="color:#fff">${v.h1w||'RENOVIRATE STAN?'}</div>
+        <div style="color:${C.blue}">${v.h2b||'NAĐI MAJSTORA'}</div>
+        <div style="color:${C.blue}">${v.h3b||'BEZ STRESA!'}</div>
+      </div>
+      <div style="font-family:'Barlow',sans-serif;font-size:34px;line-height:1.55;color:rgba(255,255,255,.78);margin-bottom:70px;white-space:pre-line">${v.body||'Povežite se direktno s provjerenim majstorima u vašem gradu.'}</div>
+      ${cta(v.cta||'PREUZMI APP →')}
+    </div>
+  `);
+}
+
+function T05(v) {
+  function chatBubble(icon, text, isAi=false) {
+    return `<div style="background:${isAi?'rgba(3,89,255,.18)':'rgba(255,255,255,.07)'};border:1.5px solid ${isAi?'rgba(3,89,255,.35)':'rgba(255,255,255,.12)'};border-radius:20px;padding:32px 38px;margin-bottom:18px;font-family:'Barlow',sans-serif;font-size:30px;color:${isAi?C.bluel:'rgba(255,255,255,.85)'}">${icon} ${text}</div>`;
+  }
+  return tplWrap(C.bg, 'rgba(255,255,255,0.03)', `
+    <div style="padding:90px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:100px">
+        ${badge('🤖 AI ASISTENT')}
+        ${logo(1.8)}
+      </div>
+      <div style="font-size:115px;font-weight:900;line-height:.88;text-transform:uppercase;margin-bottom:60px">
+        <div><span style="color:${C.blue}">${(v.headline1||'PITAJ AI,').split(' ')[0]}</span> ${(v.headline1||'PITAJ AI,').split(' ').slice(1).join(' ')}</div>
+        <div style="color:#fff">${v.headline2||'NAĐI'}</div>
+        <div style="color:#fff">${v.headline3||'MAJSTORA!'}</div>
+      </div>
+      <div style="font-family:'Barlow',sans-serif;font-size:32px;line-height:1.5;color:rgba(255,255,255,.75);margin-bottom:60px">${v.body||'Naš AI asistent u sekundi pronalazi pravo rješenje.'}</div>
+      ${chatBubble('💬', v.chat1||'Treba mi hitno majstor za vodu...')}
+      ${chatBubble('🤖', v.chat2||'Pronašao sam 3 vodoinstalatera u vašem gradu →', true)}
+    </div>
+  `);
+}
+
+function T06(v) {
+  return `<div style="width:1080px;height:1920px;background:#110508;position:relative;overflow:hidden;font-family:'Barlow Condensed',sans-serif">
+    ${stripeLines('rgba(204,21,21,0.1)')}
+    <div style="position:absolute;bottom:-180px;left:50%;transform:translateX(-50%);width:860px;height:660px;background:radial-gradient(ellipse,rgba(204,21,21,.28) 0%,transparent 70%);pointer-events:none;z-index:1"></div>
+    <div style="position:relative;z-index:2;padding:90px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:100px">
+        ${badge('🚨 URGENTNO', C.red)}
+        ${logo(1.8)}
+      </div>
+      <div style="font-size:165px;font-weight:900;line-height:.85;text-transform:uppercase;margin-bottom:60px">
+        <div style="color:#fff">${v.headline1||'HITNA'}</div>
+        <div style="color:${C.red}">${v.headline2||'INTER-'}</div>
+        <div style="color:${C.red}">${v.headline3||'VENCIJA?'}</div>
+      </div>
+      <div style="font-family:'Barlow',sans-serif;font-size:34px;line-height:1.55;color:rgba(255,255,255,.8);margin-bottom:60px;white-space:pre-line">${v.body||'Kvar koji ne može čekati?\nPovežite se s majstorom odmah.'}</div>
+      <div style="font-size:44px;font-weight:900;letter-spacing:3px;text-transform:uppercase;margin-bottom:60px;color:#fff">${v.avail||'DOSTUPNI 0-24 · SVAKI DAN'}</div>
+      ${cta(v.cta||'HITNO KONTAKTIRAJ →', C.red)}
+    </div>
+  </div>`;
+}
+
+function T07(v) {
+  function stat(num, label) {
+    return `<div style="margin-bottom:0">
+      <div style="font-size:180px;font-weight:900;color:${C.blue};line-height:.85">${num}</div>
+      <div style="font-size:32px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.65);margin-bottom:50px">${label}</div>
+      <div style="height:2px;background:rgba(255,255,255,.08);margin-bottom:50px"></div>
+    </div>`;
+  }
+  return tplWrap(C.bg, 'rgba(3,89,255,0.07)', `
+    <div style="padding:90px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:100px">
+        <div style="font-size:40px;font-weight:900;letter-spacing:3px;color:#fff">${v.title||'U BROJKAMA'}</div>
+        ${logo(1.8)}
+      </div>
+      ${stat(v.stat1n||'10K+', v.stat1l||'REGISTROVANIH KORISNIKA')}
+      ${stat(v.stat2n||'500+', v.stat2l||'DOSTUPNIH MAJSTORA U BIH')}
+      <div>
+        <div style="font-size:180px;font-weight:900;color:${C.blue};line-height:.85">${v.stat3n||'4.9★'}</div>
+        <div style="font-size:32px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.65)">${v.stat3l||'PROSJEČNA OCJENA'}</div>
+      </div>
+    </div>
+  `);
+}
+
+function T08(v) {
+  return tplWrap(C.bg, 'rgba(3,89,255,0.07)', `
+    <div style="padding:90px">
+      <div style="text-align:right;margin-bottom:140px">${logo(2.2)}</div>
+      <div style="font-size:110px;margin-bottom:20px">${v.icon||'🌿'}</div>
+      <div style="font-size:26px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:${C.blue};margin-bottom:40px">${v.season||'SEZONA RENOVIRANJA'}</div>
+      <div style="font-size:140px;font-weight:900;line-height:.88;text-transform:uppercase;margin-bottom:60px">
+        <div style="color:#22cc66">${v.h1||'PROLJEĆE'}</div>
+        <div style="color:#fff">${v.h2||'JE OVDJE.'}</div>
+      </div>
+      <div style="font-family:'Barlow',sans-serif;font-size:32px;line-height:1.55;color:rgba(255,255,255,.75);margin-bottom:70px">${v.body||'Ovo je pravo vrijeme za renoviranje. Nađi majstora i kreni na posao!'}</div>
+      ${cta(v.cta||'PRONAĐI MAJSTORA →')}
+    </div>
+  `);
+}
+
+function T09(v) {
+  function side(bg, icon, title, titleColor, text, textColor, align) {
+    return `<div style="position:absolute;${align}:0;top:0;width:540px;height:1920px;background:${bg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 54px;text-align:center">
+      <div style="font-size:110px;margin-bottom:28px">${icon}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:${titleColor};margin-bottom:30px">${title}</div>
+      <div style="font-family:'Barlow',sans-serif;font-size:30px;line-height:1.5;color:${textColor};white-space:pre-line">${text}</div>
+    </div>`;
+  }
+  return `<div style="width:1080px;height:1920px;position:relative;overflow:hidden;font-family:'Barlow Condensed',sans-serif">
+    ${side('linear-gradient(135deg,#0a0a0a,#1a1a2e)', v.b_icon||'😟', v.b_title||'PRIJE', 'rgba(255,255,255,.5)', v.b_content||'Čekanje tjednima.\nNepouzdano, skupo.', 'rgba(255,255,255,.7)', 'left')}
+    ${side('linear-gradient(135deg,#020f2e,#0c2060)', v.a_icon||'😊', v.a_title||'POSLIJE', C.bluel, v.a_content||'Majstor za sat.\nProvjeren, dostupan.', C.bluel, 'right')}
+    <div style="position:absolute;left:50%;top:0;width:6px;height:1920px;background:${C.blue};transform:translateX(-50%);z-index:2"></div>
+    <div style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);z-index:3">${logo(1.8)}</div>
+  </div>`;
+}
+
+function T10(v) {
+  function rr(label) {
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:26px;font-weight:700;color:#fff">
+      <span>${label}</span>
+      <span style="font-size:28px">${starsRow(5)}</span>
+    </div>`;
+  }
+  const ini = (v.initials||'AH').substring(0,2).toUpperCase();
+  return tplWrap(C.bg, 'rgba(3,89,255,0.07)', `
+    <div style="padding:90px">
+      <div style="display:flex;align-items:center;gap:18px;margin-bottom:60px">
+        <span style="font-size:52px">🏆</span>
+        <span style="font-size:42px;font-weight:900;letter-spacing:3px;color:#fff">MAJSTOR <span style="color:${C.blue}">${v.month||'MART 2026'}</span></span>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border:1px solid #1a2d55;border-radius:20px;padding:52px;margin-bottom:40px">
+        <div style="width:110px;height:110px;background:${C.blue};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:900;color:#fff;margin-bottom:26px">${ini}</div>
+        <div style="font-size:52px;font-weight:900;color:#fff;margin-bottom:8px">${v.name||'Amar Hadžić'}</div>
+        <div style="font-size:26px;color:${C.gray};margin-bottom:34px">${v.job||'Električar · Sarajevo'}</div>
+        <div style="font-family:'Barlow',sans-serif;font-size:28px;font-style:italic;color:rgba(255,255,255,.7);line-height:1.5;margin-bottom:36px">${v.quote||'"Pedantan, uredan i stručan."'}</div>
+        ${rr(v.r1l||'Komunikacija')}
+        ${rr(v.r2l||'Dogovor')}
+        ${rr(v.r3l||'Brzina')}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:26px;font-weight:700;color:${C.gray}">${v.month||''}</div>
+        ${logo(1.8)}
+      </div>
+    </div>
+  `);
+}
+
+function T11(v) {
+  function ans(num, label, primary=true) {
+    return `<div style="flex:1;background:${primary?'rgba(3,89,255,.14)':'rgba(255,255,255,.05)'};border:2px solid ${primary?'rgba(3,89,255,.35)':'rgba(255,255,255,.1)'};border-radius:16px;padding:38px 40px">
+      <div style="font-size:70px;font-weight:900;color:${primary?C.blue:'rgba(255,255,255,.28)'};margin-bottom:8px">${num}</div>
+      <div style="font-size:26px;font-weight:600;color:rgba(255,255,255,.65)">${label}</div>
+    </div>`;
+  }
+  return tplWrap(C.bg, 'rgba(255,255,255,0.03)', `
+    <div style="padding:90px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:90px">
+        ${badge('💡 '+(v.badge||'ZNATE LI?'))}
+        ${logo(1.8)}
+      </div>
+      <div style="font-size:92px;font-weight:900;line-height:.9;text-transform:uppercase;color:#fff;margin-bottom:80px;white-space:pre-line">${v.question||'KOLIKO TRAJE\nPROSJEČAN\nSERVIS KLIME?'}</div>
+      <div style="display:flex;gap:24px;margin-bottom:80px">
+        ${ans(v.ans1n||'1-2h', v.ans1l||'S pravim majstorom', true)}
+        ${ans(v.ans2n||'3-5h', v.ans2l||'Bez pravog majstora', false)}
+      </div>
+      ${cta(v.cta||'NAĐI MAJSTORA ZA KLIMU →')}
+    </div>
+  `);
+}
+
+function T12(v) {
+  return `<div style="width:1080px;height:1920px;background:${C.blue};position:relative;overflow:hidden;font-family:'Barlow Condensed',sans-serif">
+    ${stripeLines('rgba(255,255,255,0.06)')}
+    <div style="position:relative;z-index:1;padding:90px;display:flex;flex-direction:column;height:1920px">
+      <div style="margin-bottom:120px">${logo(2.2)}</div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+        <div style="font-size:190px;font-weight:900;line-height:.84;text-transform:uppercase;color:#fff;margin-bottom:30px">
+          <div>${v.h1||'PREUZMI'}</div>
+          <div>${v.h2||'ODMAH.'}</div>
+        </div>
+        <div style="font-size:42px;font-weight:800;letter-spacing:4px;color:rgba(255,255,255,.7);text-transform:uppercase;margin-bottom:50px">${v.tag||'BESPLATNO. BEZ ČEKANJA.'}</div>
+        <div style="font-family:'Barlow',sans-serif;font-size:32px;color:rgba(255,255,255,.82);line-height:1.55;margin-bottom:80px;white-space:pre-line">${v.body||'Dostupno na Google Play i App Store.\nPovežite se s majstorom za manje od minute.'}</div>
+        ${cta('📱 '+(v.cta||'PREUZMI APLIKACIJU →'), '#fff', C.blue)}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── TEMPLATES MAP ────────────────────────────────────────────────────
+const TPLS = {
+  1:  { name:"APP PROMO · KLIJENTI",    build:T01, fields:[
+    {id:"headline1",l:"Headline 1 (bijela)",     def:"MAJSTOR"},
+    {id:"headline2",l:"Headline 2 plavi akcenat",def:"DOHVAT"},
+    {id:"headline3",l:"Headline 3 (bijela)",     def:"RUKE!"},
+    {id:"tagline",  l:"Tagline",                 def:"BAŠ PO VAŠOJ MJERI."},
+    {id:"cta",      l:"CTA dugme",               def:"PREUZMI APLIKACIJU →"},
+    {id:"badge1",   l:"Store badge 1",           def:"Google Play"},
+    {id:"badge2",   l:"Store badge 2",           def:"App Store"},
+  ]},
+  2:  { name:"REGRUTACIJA MAJSTORA",   build:T02, fields:[
+    {id:"badge",    l:"Badge tekst",             def:"ZA MAJSTORE"},
+    {id:"headline1",l:"Headline 1",              def:"MAJSTORE,"},
+    {id:"headline2",l:"Headline 2",              def:"TRAŽIŠ JOŠ"},
+    {id:"headline3",l:"Headline 3 (plava)",      def:"POSLA?"},
+    {id:"body",     l:"Body tekst",              def:"Hiljade klijenata te čeka.\nPostavi oglas i počni danas.", ta:true},
+    {id:"cta",      l:"CTA dugme",               def:"POSTAVI OGLAS →"},
+    {id:"bgicon",   l:"Pozadinska ikona (emoji)",def:"🔧"},
+  ]},
+  3:  { name:"RECENZIJA · TESTIMONIAL", build:T03, fields:[
+    {id:"badge",   l:"Badge (struka)",           def:"VODOINSTALATER"},
+    {id:"quote",   l:"Citat recenzije",          def:"Profesionalan i uredan. Završio posao brzo i bez stresa. Sve je odlično urađeno!", ta:true},
+    {id:"rating1l",l:"Kriterij 1",               def:"Komunikacija"},
+    {id:"rating2l",l:"Kriterij 2",               def:"Dogovor"},
+    {id:"rating3l",l:"Kriterij 3",               def:"Brzina"},
+    {id:"rating1s",l:"Ocjena 1 (1-5)",           def:"5"},
+    {id:"rating2s",l:"Ocjena 2 (1-5)",           def:"5"},
+    {id:"rating3s",l:"Ocjena 3 (1-5)",           def:"5"},
+  ]},
+  4:  { name:"PROBLEM / RJEŠENJE",     build:T04, fields:[
+    {id:"h1w", l:"Headline 1 (bijela)", def:"RENOVIRATE STAN?"},
+    {id:"h2b", l:"Headline 2 (plava)",  def:"NAĐI MAJSTORA"},
+    {id:"h3b", l:"Headline 3 (plava)",  def:"BEZ STRESA!"},
+    {id:"body",l:"Body tekst",          def:"Povežite se direktno s provjerenim majstorima u vašem gradu.", ta:true},
+    {id:"cta", l:"CTA dugme",           def:"PREUZMI APP →"},
+  ]},
+  5:  { name:"AI ASISTENT FEATURE",    build:T05, fields:[
+    {id:"headline1",l:"Headline 1",              def:"PITAJ AI,"},
+    {id:"headline2",l:"Headline 2",              def:"NAĐI"},
+    {id:"headline3",l:"Headline 3",              def:"MAJSTORA!"},
+    {id:"body",     l:"Body tekst",              def:"Naš AI asistent u sekundi pronalazi pravo rješenje.", ta:true},
+    {id:"chat1",    l:"Chat: poruka korisnika",  def:"Treba mi hitno majstor za vodu..."},
+    {id:"chat2",    l:"Chat: AI odgovor",        def:"Pronašao sam 3 vodoinstalatera u vašem gradu →"},
+  ]},
+  6:  { name:"HITNA INTERVENCIJA",     build:T06, fields:[
+    {id:"headline1",l:"Headline 1 (bijela)",     def:"HITNA"},
+    {id:"headline2",l:"Headline 2 (crvena)",     def:"INTER-"},
+    {id:"headline3",l:"Headline 3 (crvena)",     def:"VENCIJA?"},
+    {id:"body",     l:"Body tekst",              def:"Kvar koji ne može čekati?\nPovežite se s majstorom odmah.", ta:true},
+    {id:"avail",    l:"Dostupnost tekst",        def:"DOSTUPNI 0-24 · SVAKI DAN"},
+    {id:"cta",      l:"CTA dugme",               def:"HITNO KONTAKTIRAJ →"},
+  ]},
+  7:  { name:"STATISTIKE · SOCIAL PROOF", build:T07, fields:[
+    {id:"title", l:"Naslov sekcije", def:"U BROJKAMA"},
+    {id:"stat1n",l:"Stat 1 broj",    def:"10K+"},
+    {id:"stat1l",l:"Stat 1 opis",    def:"REGISTROVANIH KORISNIKA"},
+    {id:"stat2n",l:"Stat 2 broj",    def:"500+"},
+    {id:"stat2l",l:"Stat 2 opis",    def:"DOSTUPNIH MAJSTORA U BIH"},
+    {id:"stat3n",l:"Stat 3 broj",    def:"4.9★"},
+    {id:"stat3l",l:"Stat 3 opis",    def:"PROSJEČNA OCJENA"},
+  ]},
+  8:  { name:"SEZONSKI POST",          build:T08, fields:[
+    {id:"icon",  l:"Ikona sezone (emoji)", def:"🌿"},
+    {id:"season",l:"Sezona tekst",         def:"SEZONA RENOVIRANJA"},
+    {id:"h1",    l:"Headline 1 (zelena)", def:"PROLJEĆE"},
+    {id:"h2",    l:"Headline 2 (bijela)", def:"JE OVDJE."},
+    {id:"body",  l:"Body tekst",          def:"Ovo je pravo vrijeme za renoviranje. Nađi majstora i kreni!", ta:true},
+    {id:"cta",   l:"CTA dugme",           def:"PRONAĐI MAJSTORA →"},
+  ]},
+  9:  { name:"PRIJE / POSLIJE",        build:T09, fields:[
+    {id:"b_title",  l:"PRIJE naslov",   def:"PRIJE"},
+    {id:"b_icon",   l:"PRIJE ikona",    def:"😟"},
+    {id:"b_content",l:"PRIJE tekst",    def:"Čekanje tjednima.\nNepouzdano, skupo.", ta:true},
+    {id:"a_title",  l:"POSLIJE naslov", def:"POSLIJE"},
+    {id:"a_icon",   l:"POSLIJE ikona",  def:"😊"},
+    {id:"a_content",l:"POSLIJE tekst",  def:"Majstor za sat.\nProvjeren, dostupan.", ta:true},
+  ]},
+  10: { name:"MAJSTOR MJESECA",        build:T10, fields:[
+    {id:"initials",l:"Inicijali (2 slova)", def:"AH"},
+    {id:"name",    l:"Ime i prezime",       def:"Amar Hadžić"},
+    {id:"job",     l:"Zanimanje · Grad",    def:"Električar · Sarajevo"},
+    {id:"quote",   l:"Citat majstora",      def:'"Pedantan, uredan i stručan. Obavio posao u rekordnom roku."', ta:true},
+    {id:"r1l",     l:"Kriterij 1",          def:"Komunikacija"},
+    {id:"r2l",     l:"Kriterij 2",          def:"Dogovor"},
+    {id:"r3l",     l:"Kriterij 3",          def:"Brzina"},
+    {id:"month",   l:"Mjesec/Godina",       def:"MART 2026"},
+  ]},
+  11: { name:"EDUKATIVNI POST",        build:T11, fields:[
+    {id:"badge",   l:"Badge tekst",      def:"ZNATE LI?"},
+    {id:"question",l:"Pitanje (headline)",def:"KOLIKO TRAJE\nPROSJEČAN\nSERVIS KLIME?", ta:true},
+    {id:"ans1n",   l:"Odgovor 1 broj",   def:"1-2h"},
+    {id:"ans1l",   l:"Odgovor 1 opis",   def:"S pravim majstorom"},
+    {id:"ans2n",   l:"Odgovor 2 broj",   def:"3-5h"},
+    {id:"ans2l",   l:"Odgovor 2 opis",   def:"Bez pravog majstora"},
+    {id:"cta",     l:"CTA dugme",        def:"NAĐI MAJSTORA ZA KLIMU →"},
+  ]},
+  12: { name:"DOWNLOAD CTA BOLD",      build:T12, fields:[
+    {id:"h1",  l:"Headline 1",  def:"PREUZMI"},
+    {id:"h2",  l:"Headline 2",  def:"ODMAH."},
+    {id:"tag", l:"Tagline",     def:"BESPLATNO. BEZ ČEKANJA."},
+    {id:"body",l:"Body tekst",  def:"Dostupno na Google Play i App Store.\nPovežite se s majstorom za manje od minute.", ta:true},
+    {id:"cta", l:"CTA dugme",   def:"PREUZMI APLIKACIJU →"},
+  ]},
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────
+let cur = 1;
+const vals = {};
+Object.keys(TPLS).forEach(k => {
+  vals[k] = {};
+  TPLS[k].fields.forEach(f => { vals[k][f.id] = f.def; });
+});
+
+// ─── BUILD SIDEBAR ────────────────────────────────────────────────────
+(function buildSidebar() {
+  const list = document.getElementById('tpl-list');
+  Object.keys(TPLS).forEach(k => {
+    const btn = document.createElement('button');
+    btn.className = 'tb' + (k==1?' on':'');
+    btn.innerHTML = `<span class="n">T${String(k).padStart(2,'0')}</span>${TPLS[k].name}`;
+    btn.onclick = () => select(parseInt(k));
+    list.appendChild(btn);
+  });
+})();
+
+// ─── SELECT ───────────────────────────────────────────────────────────
+function select(n) {
+  cur = n;
+  document.querySelectorAll('.tb').forEach((b,i) => b.classList.toggle('on', i===n-1));
+  document.getElementById('etitle').textContent = TPLS[n].name;
+  buildFields();
+  renderPreview();
+}
+
+// ─── FIELDS ───────────────────────────────────────────────────────────
+function buildFields() {
+  const c = document.getElementById('efields');
+  c.innerHTML = '';
+  TPLS[cur].fields.forEach(f => {
+    const d = document.createElement('div');
+    d.className = 'fg';
+    const lbl = document.createElement('label');
+    lbl.textContent = f.l;
+    d.appendChild(lbl);
+    const inp = f.ta ? document.createElement('textarea') : document.createElement('input');
+    if (!f.ta) inp.type = 'text';
+    inp.value = vals[cur][f.id];
+    inp.oninput = () => { vals[cur][f.id] = inp.value; renderPreview(); };
+    d.appendChild(inp);
+    c.appendChild(d);
+  });
+}
+
+// ─── PREVIEW ──────────────────────────────────────────────────────────
+function renderPreview() {
+  const html = TPLS[cur].build(vals[cur]);
+  document.getElementById('pcanvas').innerHTML = html;
+  updateScale();
+  makeDraggable();
+}
+
+function updateScale() {
+  const pa = document.getElementById('parea');
+  const pw = document.getElementById('pwrap');
+  const pc = document.getElementById('pcanvas');
+  const scale = Math.min((pa.clientHeight - 60) / 1920, (pa.clientWidth - 40) / 1080);
+  pw.style.width  = Math.round(1080*scale)+'px';
+  pw.style.height = Math.round(1920*scale)+'px';
+  pc.style.transform = `scale(${scale})`;
+  pc.style.width  = '1080px';
+  pc.style.height = '1920px';
+}
+
+// ─── DOWNLOAD ─────────────────────────────────────────────────────────
+async function download() {
+  const btn = document.getElementById('dlbtn');
+  btn.classList.add('loading');
+  btn.textContent = '⏳ GENERIŠEM...';
+
+  // Render in hidden div
+  const html = TPLS[cur].build(vals[cur]);
+  const tr = document.getElementById('trender');
+  tr.innerHTML = html;
+
+  // Wait for fonts
+  await document.fonts.ready;
+  await new Promise(r => setTimeout(r, 800));
+
+  const el = tr.firstElementChild;
+
+  try {
+    const canvas = await html2canvas(el, {
+      width: 1080,
+      height: 1920,
+      scale: 1,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#070d1c',
+      logging: false,
+      imageTimeout: 0,
+    });
+
+    const a = document.createElement('a');
+    const name = TPLS[cur].name.toLowerCase().replace(/[^a-z0-9]+/g,'_');
+    a.download = `moj-majstor-${name}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  } catch(e) {
+    alert('Greška: ' + e.message);
+  }
+
+  btn.classList.remove('loading');
+  btn.textContent = '⬇ PREUZMI REELS (1080×1920)';
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  buildThemesBar();
+  select(1);
+  window.addEventListener('resize', updateScale);
+});
+</script>
+</body>
+</html>
