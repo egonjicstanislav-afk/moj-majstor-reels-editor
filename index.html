@@ -164,13 +164,14 @@ body {
 /* BACKGROUND SELECTOR */
 #bg-bar {
   padding:8px 10px; border-bottom:1px solid var(--bord);
-  display:flex; align-items:center; gap:6px;
+  display:flex; align-items:flex-start; gap:6px; flex-wrap:wrap;
 }
 #bg-bar .tlbl {
   font-size:9px; font-weight:700; color:var(--gray);
-  text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; margin-right:2px;
+  text-transform:uppercase; letter-spacing:.4px; white-space:nowrap;
+  margin-right:2px; padding-top:3px;
 }
-#bg-thumbs { display:flex; gap:5px; }
+#bg-thumbs { display:flex; gap:5px; flex-wrap:wrap; flex:1; }
 .bgsw {
   width:32px; height:20px; border-radius:3px;
   cursor:pointer; border:2px solid transparent;
@@ -301,10 +302,13 @@ function buildThemesBar() {
 
 // ─── BACKGROUNDS ──────────────────────────────────────────────────────
 const BACKGROUNDS = [
-  { name:'Nijansa',      src: null },
-  { name:'Gradijent',   src: 'assets/bg1.png' },
-  { name:'Circuit',     src: 'assets/bg2.png' },
-  { name:'Zvijezde',    src: 'assets/bg3.png' },
+  { name:'Bez pozadine', src: null },
+  { name:'Plavi gradijent', src: 'assets/bg1.jpg' },
+  { name:'Circuit board',   src: 'assets/bg2.jpg' },
+  { name:'Zvijezde',        src: 'assets/bg3.jpg' },
+  { name:'HUD elementi',    src: 'assets/bg4.jpg' },
+  { name:'Plavi frame',     src: 'assets/bg5.jpg' },
+  { name:'Tamni dijagonale',src: 'assets/bg6.jpg' },
 ];
 let curBg = 0;
 
