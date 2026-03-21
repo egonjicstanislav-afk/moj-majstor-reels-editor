@@ -313,7 +313,7 @@ const BACKGROUNDS = [
   { name:'Circuit 2',       src: 'assets/bg8.jpg' },
   { name:'Plavi gradijent 2',src:'assets/bg9.jpg' },
 ];
-let curBg = 0;
+let curBg = 9;
 
 function applyBg(idx) {
   curBg = idx;
@@ -325,7 +325,7 @@ function buildBgBar() {
   const wrap = document.getElementById('bg-thumbs');
   BACKGROUNDS.forEach((bg, i) => {
     const sw = document.createElement('div');
-    sw.className = 'bgsw' + (i === 0 ? ' on' : '') + (bg.src ? '' : ' none');
+    sw.className = 'bgsw' + (i === curBg ? ' on' : '') + (bg.src ? '' : ' none');
     sw.title = bg.name;
     if (bg.src) sw.style.backgroundImage = `url('${bg.src}')`;
     sw.onclick = () => applyBg(i);
@@ -607,6 +607,12 @@ function accentRgba(opacity) {
   return `rgba(${r},${g},${b},${opacity})`;
 }
 
+function bgRgba(opacity) {
+  const h = C.bg.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${opacity})`;
+}
+
 function logo(scale=1) {
   const s = (n) => Math.round(n*scale)+'px';
   return `<div style="display:inline-flex;align-items:center;gap:${s(10)};background:${C.bord};border-radius:${s(50)};padding:${s(8)} ${s(20)} ${s(8)} ${s(8)}">
@@ -637,7 +643,7 @@ function starsRow(n=5) {
 function tplWrap(bg, stripeColor, content) {
   const bgImg = (typeof curBg !== 'undefined' && BACKGROUNDS[curBg] && BACKGROUNDS[curBg].src)
     ? `<div style="position:absolute;inset:0;background-image:url('${BACKGROUNDS[curBg].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none"></div>
-       <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:0;pointer-events:none"></div>`
+       <div style="position:absolute;inset:0;background:${bgRgba(0.72)};z-index:0;pointer-events:none"></div>`
     : '';
   return `<div style="width:1080px;height:1920px;background:${bg};position:relative;overflow:hidden;font-family:'Barlow Condensed',sans-serif">
     ${bgImg}
@@ -752,7 +758,7 @@ function T05(v) {
 function T06(v) {
   const bgImg6 = (typeof curBg !== 'undefined' && BACKGROUNDS[curBg] && BACKGROUNDS[curBg].src)
     ? `<div style="position:absolute;inset:0;background-image:url('${BACKGROUNDS[curBg].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none"></div>
-       <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:0;pointer-events:none"></div>` : '';
+       <div style="position:absolute;inset:0;background:${bgRgba(0.72)};z-index:0;pointer-events:none"></div>` : '';
   return `<div style="width:1080px;height:1920px;background:#110508;position:relative;overflow:hidden;font-family:'Barlow Condensed',sans-serif">
     ${bgImg6}
     ${stripeLines(accentRgba(0.1))}
