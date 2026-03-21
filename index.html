@@ -177,10 +177,16 @@ body {
   cursor:pointer; border:2px solid transparent;
   flex-shrink:0; transition:border-color .15s,transform .15s;
   background-size:cover; background-position:center;
+  position:relative; overflow:hidden;
 }
 .bgsw:hover { transform:scale(1.1); }
 .bgsw.on { border-color:#fff; }
-.bgsw.none { background:#111e38; position:relative; }
+.bgsw:not(.none)::before {
+  content:''; position:absolute; inset:0;
+  background:var(--bg); opacity:0.55; pointer-events:none;
+  transition:background .3s;
+}
+.bgsw.none { background:var(--bg3); }
 .bgsw.none::after { content:'✕'; font-size:10px; color:var(--gray); position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
 
 /* PREVIEW */
@@ -896,7 +902,7 @@ function T11(v) {
 function T12(v) {
   const bgImg12 = (typeof curBg !== 'undefined' && BACKGROUNDS[curBg] && BACKGROUNDS[curBg].src)
     ? `<div style="position:absolute;inset:0;background-image:url('${BACKGROUNDS[curBg].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none"></div>
-       <div style="position:absolute;inset:0;background:rgba(3,89,255,0.6);z-index:0;pointer-events:none"></div>` : '';
+       <div style="position:absolute;inset:0;background:${bgRgba(0.72)};z-index:0;pointer-events:none"></div>` : '';
   return `<div style="width:1080px;height:1920px;background:${C.blue};position:relative;overflow:hidden;font-family:'Barlow Condensed',sans-serif">
     ${bgImg12}
     ${stripeLines(accentRgba(0.06))}
