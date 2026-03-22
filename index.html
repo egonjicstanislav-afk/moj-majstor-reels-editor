@@ -188,6 +188,14 @@ body {
 }
 .bgsw.none { background:var(--bg3); }
 .bgsw.none::after { content:'✕'; font-size:10px; color:var(--gray); position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.bg-upload-btn {
+  width:32px; height:20px; border-radius:3px; flex-shrink:0;
+  border:1.5px dashed var(--bord); background:transparent;
+  color:var(--gray); font-size:16px; line-height:1;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:border-color .15s, color .15s;
+}
+.bg-upload-btn:hover { border-color:var(--accent); color:var(--accent); }
 
 /* PREVIEW */
 #parea {
@@ -402,6 +410,32 @@ function buildBgBar() {
     sw.onclick = () => applyBg(i);
     wrap.appendChild(sw);
   });
+
+  // Upload dugme
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.style.display = 'none';
+  fileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const src = ev.target.result;
+      const bgs = activeBgs();
+      bgs.push({ name: file.name.replace(/\.[^.]+$/, ''), src });
+      applyBg(bgs.length - 1);
+      buildBgBar();
+    };
+    reader.readAsDataURL(file);
+    fileInput.value = '';
+  };
+
+  const btn = document.createElement('div');
+  btn.className = 'bg-upload-btn';
+  btn.title = 'Importuj pozadinu';
+  btn.textContent = '+';
+  btn.onclick = () => fileInput.click();
+  wrap.appendChild(fileInput);
+  wrap.appendChild(btn);
 }
 
 // ─── DRAG ─────────────────────────────────────────────────────────────
