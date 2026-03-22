@@ -1023,7 +1023,7 @@ function IA01(v) {
     <div style="padding:90px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:100px">
         ${iaLogo(2)}
-        ${iaBadge(v.badge||'USKORO DOSTUPNO')}
+        ${iaBadge(v.badge||'REGISTRUJTE SE')}
       </div>
       <div style="font-size:150px;font-weight:900;line-height:.88;margin-bottom:40px">
         <div style="color:#fff">${v.h1||'NE MORAŠ'}</div>
@@ -1266,7 +1266,7 @@ const TPLS = {
 
 const IA_TPLS = {
   1: { name:"APP PROMO · GLAVNI",     build:IA01, fields:[
-    {id:"badge", l:"Badge tekst",    def:"USKORO DOSTUPNO"},
+    {id:"badge", l:"Badge tekst",    def:"REGISTRUJTE SE"},
     {id:"h1",    l:"Headline 1",     def:"NE MORAŠ"},
     {id:"h2",    l:"Headline 2",     def:"KUPOVATI."},
     {id:"h3",    l:"Headline 3 (accent)", def:"IZNAJMI!!!!"},
