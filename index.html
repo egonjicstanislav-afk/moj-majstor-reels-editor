@@ -1520,11 +1520,17 @@ async function download() {
   tr.innerHTML = html;
   const el = tr.firstElementChild;
 
-  // Apply element visibility
+  // Apply element visibility + drag positions
   const rContainer = findContentContainer(el);
-  if (rContainer && elemVisibility[cur]) {
+  if (rContainer) {
     Array.from(rContainer.children).forEach((child, i) => {
-      if (elemVisibility[cur][i] === false) child.style.visibility = 'hidden';
+      if (elemVisibility[cur] && elemVisibility[cur][i] === false)
+        child.style.visibility = 'hidden';
+      const pos = dragPos[cur] && dragPos[cur][i];
+      if (pos) {
+        child.style.position  = 'relative';
+        child.style.transform = `translate(${pos.x}px,${pos.y}px)`;
+      }
     });
   }
 
