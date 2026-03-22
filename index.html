@@ -351,31 +351,48 @@ function buildThemesBar() {
 }
 
 // ─── BACKGROUNDS ──────────────────────────────────────────────────────
-const BACKGROUNDS = [
-  { name:'Bez pozadine', src: null },
-  { name:'Plavi gradijent', src: 'assets/bg1.jpg' },
-  { name:'Circuit board',   src: 'assets/bg2.jpg' },
-  { name:'Zvijezde',        src: 'assets/bg3.jpg' },
-  { name:'HUD elementi',    src: 'assets/bg4.jpg' },
-  { name:'Plavi frame',     src: 'assets/bg5.jpg' },
-  { name:'Tamni dijagonale',src: 'assets/bg6.jpg' },
-  { name:'Zvijezde konst.', src: 'assets/bg7.jpg' },
-  { name:'Circuit 2',       src: 'assets/bg8.jpg' },
-  { name:'Plavi gradijent 2',src:'assets/bg9.jpg' },
+const MM_BACKGROUNDS = [
+  { name:'Bez pozadine',     src: null },
+  { name:'Plavi gradijent',  src: 'assets/bg1.jpg' },
+  { name:'Circuit board',    src: 'assets/bg2.jpg' },
+  { name:'Zvijezde',         src: 'assets/bg3.jpg' },
+  { name:'HUD elementi',     src: 'assets/bg4.jpg' },
+  { name:'Plavi frame',      src: 'assets/bg5.jpg' },
+  { name:'Tamni dijagonale', src: 'assets/bg6.jpg' },
+  { name:'Zvijezde konst.',  src: 'assets/bg7.jpg' },
+  { name:'Circuit 2',        src: 'assets/bg8.jpg' },
+  { name:'Plavi gradijent 2',src: 'assets/bg9.jpg' },
 ];
-let curBg = 9;
+
+const IA_BACKGROUNDS = [
+  { name:'Bez pozadine', src: null },
+  { name:'Pozadina 1',   src: 'assets/ia-bg1.jpg' },
+  { name:'Pozadina 2',   src: 'assets/ia-bg2.jpg' },
+  { name:'Pozadina 3',   src: 'assets/ia-bg3.jpg' },
+  { name:'Pozadina 4',   src: 'assets/ia-bg4.jpg' },
+];
+
+let curBg    = 9; // MM default
+let curIaBg  = 1; // IA default (prva pozadina)
+
+function activeBgs()   { return curBrand === 'mm' ? MM_BACKGROUNDS : IA_BACKGROUNDS; }
+function activeCurBg() { return curBrand === 'mm' ? curBg : curIaBg; }
+function setActiveCurBg(idx) { if (curBrand === 'mm') curBg = idx; else curIaBg = idx; }
 
 function applyBg(idx) {
-  curBg = idx;
+  setActiveCurBg(idx);
   document.querySelectorAll('.bgsw').forEach((sw, i) => sw.classList.toggle('on', i === idx));
   renderPreview();
 }
 
 function buildBgBar() {
   const wrap = document.getElementById('bg-thumbs');
-  BACKGROUNDS.forEach((bg, i) => {
+  wrap.innerHTML = '';
+  const bgs = activeBgs();
+  const cur = activeCurBg();
+  bgs.forEach((bg, i) => {
     const sw = document.createElement('div');
-    sw.className = 'bgsw' + (i === curBg ? ' on' : '') + (bg.src ? '' : ' none');
+    sw.className = 'bgsw' + (i === cur ? ' on' : '') + (bg.src ? '' : ' none');
     sw.title = bg.name;
     if (bg.src) sw.style.backgroundImage = `url('${bg.src}')`;
     sw.onclick = () => applyBg(i);
@@ -706,8 +723,8 @@ function starsRow(n=5) {
 
 // wrapper for full-size template
 function tplWrap(bg, stripeColor, content) {
-  const bgImg = (typeof curBg !== 'undefined' && BACKGROUNDS[curBg] && BACKGROUNDS[curBg].src)
-    ? `<div style="position:absolute;inset:0;background-image:url('${BACKGROUNDS[curBg].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none"></div>
+  const bgImg = (typeof curBg !== 'undefined' && activeBgs()[activeCurBg()] && activeBgs()[activeCurBg()].src)
+    ? `<div style="position:absolute;inset:0;background-image:url('${activeBgs()[activeCurBg()].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none"></div>
        <div style="position:absolute;inset:0;background:${bgRgba(0.72)};z-index:0;pointer-events:none"></div>`
     : '';
   return `<div style="width:1080px;height:1920px;background:${bg};position:relative;overflow:hidden;font-family:'Barlow Condensed',sans-serif">
@@ -820,8 +837,8 @@ function T05(v) {
 }
 
 function T06(v) {
-  const bgImg6 = (typeof curBg !== 'undefined' && BACKGROUNDS[curBg] && BACKGROUNDS[curBg].src)
-    ? `<div style="position:absolute;inset:0;background-image:url('${BACKGROUNDS[curBg].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none"></div>
+  const bgImg6 = (typeof curBg !== 'undefined' && activeBgs()[activeCurBg()] && activeBgs()[activeCurBg()].src)
+    ? `<div style="position:absolute;inset:0;background-image:url('${activeBgs()[activeCurBg()].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none"></div>
        <div style="position:absolute;inset:0;background:${bgRgba(0.72)};z-index:0;pointer-events:none"></div>` : '';
   return `<div style="width:1080px;height:1920px;background:#110508;position:relative;overflow:hidden;font-family:'Barlow Condensed',sans-serif">
     ${bgImg6}
@@ -891,8 +908,8 @@ function T09(v) {
       <div style="font-family:'Barlow',sans-serif;font-size:30px;line-height:1.5;color:${textColor};white-space:pre-line">${text}</div>
     </div>`;
   }
-  const bgImg9 = (typeof curBg !== 'undefined' && BACKGROUNDS[curBg] && BACKGROUNDS[curBg].src)
-    ? `<div style="position:absolute;inset:0;background-image:url('${BACKGROUNDS[curBg].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none;opacity:0.35"></div>` : '';
+  const bgImg9 = (typeof curBg !== 'undefined' && activeBgs()[activeCurBg()] && activeBgs()[activeCurBg()].src)
+    ? `<div style="position:absolute;inset:0;background-image:url('${activeBgs()[activeCurBg()].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none;opacity:0.35"></div>` : '';
   return `<div style="width:1080px;height:1920px;position:relative;overflow:hidden;font-family:'Barlow Condensed',sans-serif">
     ${bgImg9}
     ${side('linear-gradient(135deg,rgba(10,10,10,0.9),rgba(26,26,46,0.9))', v.b_icon||'😟', v.b_title||'PRIJE', 'rgba(255,255,255,.5)', v.b_content||'Čekanje tjednima.\nNepouzdano, skupo.', 'rgba(255,255,255,.7)', 'left')}
@@ -957,8 +974,8 @@ function T11(v) {
 }
 
 function T12(v) {
-  const bgImg12 = (typeof curBg !== 'undefined' && BACKGROUNDS[curBg] && BACKGROUNDS[curBg].src)
-    ? `<div style="position:absolute;inset:0;background-image:url('${BACKGROUNDS[curBg].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none"></div>
+  const bgImg12 = (typeof curBg !== 'undefined' && activeBgs()[activeCurBg()] && activeBgs()[activeCurBg()].src)
+    ? `<div style="position:absolute;inset:0;background-image:url('${activeBgs()[activeCurBg()].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none"></div>
        <div style="position:absolute;inset:0;background:${bgRgba(0.72)};z-index:0;pointer-events:none"></div>` : '';
   return `<div style="width:1080px;height:1920px;background:${C.blue};position:relative;overflow:hidden;font-family:'Barlow Condensed',sans-serif">
     ${bgImg12}
@@ -980,8 +997,8 @@ function T12(v) {
 // ─── IZNAJMI ALAT TEMPLATES ───────────────────────────────────────────
 
 function IA_tplWrap(content) {
-  const bgImg = curBg > 0 && BACKGROUNDS[curBg] && BACKGROUNDS[curBg].src
-    ? `<div style="position:absolute;inset:0;background-image:url('${BACKGROUNDS[curBg].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none"></div>
+  const bgImg = curBg > 0 && activeBgs()[activeCurBg()] && activeBgs()[activeCurBg()].src
+    ? `<div style="position:absolute;inset:0;background-image:url('${activeBgs()[activeCurBg()].src}');background-size:cover;background-position:center;z-index:0;pointer-events:none"></div>
        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.65);z-index:0;pointer-events:none"></div>`
     : '';
   const r = parseInt(C.blue.slice(1,3),16), g = parseInt(C.blue.slice(3,5),16), b = parseInt(C.blue.slice(5,7),16);
@@ -1365,6 +1382,7 @@ function switchBrand(brand) {
   r.style.setProperty('--accent-l', t.bluel); r.style.setProperty('--accent-rgb', t.rgb);
   r.style.setProperty('--bord', t.bord); r.style.setProperty('--gray', t.gray);
   buildThemesBar();
+  buildBgBar();
   buildSidebar();
   select(1);
 }
